@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": ["Bash(mvn clean test:*)", "Bash(mvn test:*)", "Bash(mvn spring-boot:run:*)",
+              "Bash(docker compose up:*)", "Bash(docker compose down:*)",
+              "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)"],
+    "deny": ["Bash(git push:*)"]
+  }
+}
