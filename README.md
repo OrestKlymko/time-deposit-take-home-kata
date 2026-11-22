@@ -70,3 +70,48 @@ A junior developer implemented domain logic for a time deposit system but did no
 ### Submission Instructions
 - Provide clear instructions on how to trigger the endpoints using the Swagger contract.
 - Email the link to your public GitHub repository.
+---
+
+## Solution (Kotlin)
+
+Built with Claude Code. Tools, setup, rules and what was AI-assisted: [docs/ai-assisted-development.md](docs/ai-assisted-development.md).
+Project rules for the agent: [CLAUDE.md](CLAUDE.md).
+
+### Run
+
+Prerequisites: JDK 17+, Maven 3.9+, Docker.
+
+```bash
+cd kotlin
+docker compose up -d          # PostgreSQL 16 on localhost:5432
+mvn spring-boot:run           # Flyway creates the schema and seeds sample data
+```
+
+Swagger UI: <http://localhost:8080/swagger-ui.html> · OpenAPI contract: <http://localhost:8080/openapi.yaml>
+
+The API is **contract-first**: [`kotlin/src/main/resources/static/openapi.yaml`](kotlin/src/main/resources/static/openapi.yaml)
+is the source of truth. On every build `openapi-generator` turns it into the `TimeDepositsApi` interface and DTOs
+(under `target/generated-sources`), and `TimeDepositController` implements that interface. Changing the API means
+editing the contract first; code that no longer matches it does not compile.
+
+| Method | Path                      | Description                                                     |
+|--------|---------------------------|-----------------------------------------------------------------|
+| GET    | `/time-deposits`          | All time deposits: `id`, `planType`, `balance`, `days`, `withdrawals` |
+| POST   | `/time-deposits/balances` | Applies one month of interest to every deposit (204 No Content)   |
+
+In Swagger UI, open an operation, click **Try it out**, then **Execute**. Or with curl:
+
+```bash
+curl http://localhost:8080/time-deposits
+curl -X POST http://localhost:8080/time-deposits/balances
+```
+
+### Tests
+
+```bash
+mvn test   # needs Docker running (Testcontainers starts PostgreSQL)
+```
+
+- `TimeDepositCalculatorTest`: characterization tests pinning the original interest rules.
+- `*ServiceTest`: application services against in-memory fakes of the outbound ports (no database, no Spring).
+- `TimeDepositApiIntegrationTest`: both endpoints end to end against a real PostgreSQL in Testcontainers.
