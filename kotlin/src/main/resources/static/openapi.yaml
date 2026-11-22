@@ -1,0 +1,82 @@
+openapi: 3.0.3
+info:
+  title: XA Bank Time Deposit API
+  description: |
+    Contract-first API for XA Bank time deposits.
+    This file is the source of truth: the server interface and DTOs are generated from it at build time.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: TimeDeposits
+    description: Time deposits and their balances
+paths:
+  /time-deposits:
+    get:
+      tags: [TimeDeposits]
+      operationId: getAllTimeDeposits
+      summary: Retrieve all time deposits, including their withdrawals
+      responses:
+        '200':
+          description: All time deposits, ordered by id
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeDeposit'
+  /time-deposits/balances:
+    post:
+      tags: [TimeDeposits]
+      operationId: updateAllBalances
+      summary: Apply one month of interest to the balances of all time deposits
+      description: |
+        Applies the plan's monthly interest (basic 1%, student 3%, premium 5% per year, divided by 12)
+        to every deposit. No interest for the first 30 days; student plans earn none after one year;
+        premium plans start earning after 45 days. Takes no body because it always targets every deposit.
+        POST rather than PUT: every call adds another month of interest, so the operation is not idempotent.
+        Only balances change: `days` is not incremented, and withdrawals are not taken into account.
+      responses:
+        '204':
+          description: Balances updated
+components:
+  schemas:
+    TimeDeposit:
+      type: object
+      required: [id, planType, balance, days, withdrawals]
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 1
+        planType:
+          type: string
+          description: Plan type; known values are basic, student and premium.
+          example: basic
+        balance:
+          type: number
+          format: double
+          example: 1234567.00
+        days:
+          type: integer
+          format: int32
+          example: 45
+        withdrawals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Withdrawal'
+    Withdrawal:
+      type: object
+      required: [id, amount, date]
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 1
+        amount:
+          type: number
+          example: 1000.00
+        date:
+          type: string
+          format: date
+          example: '2026-01-15'

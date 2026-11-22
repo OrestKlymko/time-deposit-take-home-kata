@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: time-deposit
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/timedeposits}
+    username: ${DB_USERNAME:timedeposits}
+    password: ${DB_PASSWORD:timedeposits}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema is owned by Flyway; Hibernate only checks the entities match it.
+      ddl-auto: validate
+
+# Contract-first: Swagger UI shows the hand-written contract (static/openapi.yaml),
+# not documentation derived from the code. api-docs stays enabled because springdoc's UI depends on it.
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /openapi.yaml
