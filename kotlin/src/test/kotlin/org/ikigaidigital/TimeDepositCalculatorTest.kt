@@ -1,6 +1,10 @@
 package org.ikigaidigital
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.ikigaidigital.domain.model.PlanType
+import org.ikigaidigital.domain.interest.BasicInterest
+import org.ikigaidigital.domain.interest.Interest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -53,5 +57,33 @@ class TimeDepositCalculatorTest {
         calculator.updateBalance(deposits)
 
         assertThat(deposits.map { it.balance }).containsExactly(10008.33, 10041.67)
+    }
+
+    @Test
+    fun `uses the injected strategy for its plan type`() {
+        val flatTen = object : Interest {
+            override val planType = PlanType.BASIC
+            override fun monthlyInterest(deposit: TimeDeposit) = 10.0
+        }
+        val deposit = TimeDeposit(1, "basic", 10000.00, 31)
+
+        TimeDepositCalculator(listOf(flatTen)).updateBalance(listOf(deposit))
+
+        assertThat(deposit.balance).isEqualTo(10010.00)
+    }
+
+    @Test
+    fun `plan without a strategy earns no interest`() {
+        val deposit = TimeDeposit(1, "premium", 10000.00, 100)
+
+        TimeDepositCalculator(listOf(BasicInterest())).updateBalance(listOf(deposit))
+
+        assertThat(deposit.balance).isEqualTo(10000.00)
+    }
+
+    @Test
+    fun `rejects two strategies for the same plan type`() {
+        assertThatThrownBy { TimeDepositCalculator(listOf(BasicInterest(), BasicInterest())) }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 }
